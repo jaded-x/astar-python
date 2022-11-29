@@ -2,6 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import time
 
+ANIMATE = True
+
 class Maze:
     START = -1
     END = 9
@@ -20,6 +22,7 @@ class Maze:
                                      [1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,1],
                                      [1,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
                                      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
+                                     
         self.END_POS: Position = self.find_pos(self.END)
         self.START_POS: Position = self.find_pos(self.START)
         
@@ -32,21 +35,10 @@ class Maze:
     def get_location(self, pos: Position) -> Position:
         return self.map[pos.y][pos.x]
     
-    def print(self, path: list[Node] = None):
+    def print(self):
         for y in range(0, len(self.map)):
             for x in range(0, len(self.map[0])):
                 value = self.get_location(Position(x, y))
-                if path != None:
-                    if check_list(Node(Position(x, y)), path):
-                        if value == self.START:
-                            print('\x1b[0;30;44m ' + '2' + ' \x1b[0m', end='')
-                            continue
-                        elif value == self.END:
-                            print('\x1b[0;30;45m ' + '2' + ' \x1b[0m', end='')
-                            continue
-                        else:
-                            print('\x1b[0;30;42m ' + '2' + ' \x1b[0m', end='')
-                            continue
                 if value == self.WALL:
                     print('\x1b[0;37;40m ' + str(value) + ' \x1b[0m', end='')
                 elif value == self.OPEN:
@@ -56,15 +48,38 @@ class Maze:
                 elif value == self.END:
                     print('\x1b[0;30;45m ' + str(value) + ' \x1b[0m', end='')
             print()
-                
+    
+    def print_list(self, lst: list[Node], num: str, color: str):
+        time.sleep(0.05)
+        print(chr(27) + '[2J')
+        for y in range(0, len(self.map)):
+            for x in range(0, len(self.map[0])):
+                value = self.get_location(Position(x, y))
+                if check_list(Node(Position(x, y)), lst):
+                    if value == self.START:
+                        print('\x1b[0;30;44m ' + num + ' \x1b[0m', end='')
+                        continue
+                    elif value == self.END:
+                        print('\x1b[0;30;45m ' + num + ' \x1b[0m', end='')
+                        continue
+                    else:
+                        print('\x1b[0;30;' + color + 'm ' + num + ' \x1b[0m', end='')
+                        continue
+                if value == self.WALL:
+                    print('\x1b[0;37;40m ' + str(value) + ' \x1b[0m', end='')
+                elif value == self.OPEN:
+                    print('\x1b[0;30;47m ' + str(value) + ' \x1b[0m', end='')
+                elif value == self.START:
+                    print('\x1b[0;30;44m' + str(value) + ' \x1b[0m', end='')
+                elif value == self.END:
+                    print('\x1b[0;30;45m ' + str(value) + ' \x1b[0m', end='')
+            print()
+                    
 
 @dataclass
 class Position:
     x: int
     y: int
-    
-    def __str__(self):
-        return "[" + str(self.x) + ", " + str(self.y) + "]"
 
 class Node:
     def __init__(self, pos: Position, parent: Node = None):
@@ -95,9 +110,6 @@ def get_node_in_list(child: Node, lst: list[Node]) -> Node:
 
 def astar():
     while open_list:
-        time.sleep(0.1)
-        print(chr(27) + '[2J')
-        maze.print(closed_list)
         current_node: Node = open_list[0]
         for node in open_list:
             if node.f < current_node.f:
@@ -115,6 +127,7 @@ def astar():
             if child.pos == maze.END_POS:
                 print('FOUND END NODE')
                 closed_list.append(child)
+                trace_path()
                 return
             if maze.get_location(child.pos) == 1 or check_list(child, closed_list):
                 continue
@@ -125,17 +138,19 @@ def astar():
                 if child.g < node.g:
                     open_list.remove(node)
                     open_list.append(child)
-    
+                    
+        if ANIMATE: maze.print_list(closed_list, '3', '41')
+
     print("COULD NOT FIND END NODE")
 
 def trace_path():
     path: list[Node] = [closed_list[-1]]
     while path[-1].g != 0:
+        if ANIMATE: maze.print_list(path, '2', '42')
         path.append(path[-1].parent)
     
     path.reverse()
-    print(chr(27) + '[2J')
-    maze.print(path)
+    maze.print_list(path, '2', '42')
 
 
 maze: Maze = Maze()
@@ -143,8 +158,4 @@ maze: Maze = Maze()
 open_list: list[Node] = [Node(maze.START_POS)]
 closed_list: list[Node] = []
 
-maze.print()
-
 astar()
-
-trace_path()
